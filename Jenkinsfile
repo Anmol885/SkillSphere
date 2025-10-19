@@ -111,6 +111,7 @@ pipeline {
                             dir('frontend') {
                                 sh """
                                     docker build \
+                                        --build-arg NEXT_PUBLIC_API_URL=http://63.179.96.194/api/v1 \
                                         -t ${FRONTEND_IMAGE}:${VERSION} \
                                         -t ${FRONTEND_IMAGE}:${GIT_COMMIT_SHORT} \
                                         -t ${FRONTEND_IMAGE}:latest \
@@ -128,10 +129,14 @@ pipeline {
                 script {
                     echo "🔍 Scanning Docker images for vulnerabilities..."
 
-                    // Using Trivy for security scanning (install on Jenkins server)
+                    // Using Trivy for security scanning (skipped if not installed)
                     sh """
-                        trivy image --exit-code 0 --severity HIGH,CRITICAL ${BACKEND_IMAGE}:latest || true
-                        trivy image --exit-code 0 --severity HIGH,CRITICAL ${FRONTEND_IMAGE}:latest || true
+                        if command -v trivy &> /dev/null; then
+                            trivy image --exit-code 0 --severity HIGH,CRITICAL ${BACKEND_IMAGE}:latest || true
+                            trivy image --exit-code 0 --severity HIGH,CRITICAL ${FRONTEND_IMAGE}:latest || true
+                        else
+                            echo "Trivy not installed, skipping security scan"
+                        fi
                     """
                 }
             }
@@ -171,7 +176,7 @@ pipeline {
                     // SSH to EC2 and deploy
                     sshagent(['ec2-ssh-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@\${EC2_HOST} '
+                            ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
                                 cd ${DEPLOY_DIR}
 
                                 # Pull latest code
@@ -181,21 +186,18 @@ pipeline {
                                 docker pull ${BACKEND_IMAGE}:latest
                                 docker pull ${FRONTEND_IMAGE}:latest
 
-                                # Update docker-compose to use new images
-                                export BACKEND_IMAGE=${BACKEND_IMAGE}:latest
-                                export FRONTEND_IMAGE=${FRONTEND_IMAGE}:latest
-
-                                # Stop and remove old containers
-                                docker-compose down
+                                # Stop and restart only backend and frontend containers
+                                docker-compose stop backend frontend
+                                docker-compose rm -f backend frontend
 
                                 # Start new containers
-                                docker-compose up -d
+                                docker-compose up -d backend frontend
 
                                 # Clean up old images
                                 docker image prune -f
 
                                 # Health check
-                                sleep 10
+                                sleep 15
                                 curl -f http://localhost/health || exit 1
                             '
                         """
@@ -214,7 +216,7 @@ pipeline {
 
                     sshagent(['ec2-ssh-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@\${EC2_HOST} '
+                            ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
                                 # Check if containers are running
                                 docker ps | grep skillsphere
 
@@ -243,8 +245,9 @@ pipeline {
 
                     // Basic smoke tests
                     sh """
-                        curl -f http://\${EC2_HOST}/health
-                        curl -f http://\${EC2_HOST}/api/v1/auth/login -X POST -H "Content-Type: application/json" -d '{}' || true
+                        curl -f http://${EC2_HOST}/health
+                        echo "Testing login endpoint..."
+                        curl -f http://${EC2_HOST}/api/v1/auth/login -X POST -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"invalid"}' || true
                     """
                 }
             }
