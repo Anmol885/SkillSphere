@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String         @db.VarChar(100)
+  email         String         @unique @db.VarChar(150)
+  password      String         @map("password_hash") @db.Text
+  googleId      String?        @map("google_id") @db.VarChar(200)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamp
+
+  courses       Course[]
+
+  @@map("users")
+}
+
+model Course {
+  id              Int            @id @default(autoincrement())
+  userId          Int            @map("user_id")
+  title           String         @db.VarChar(200)
+  platform        String         @db.VarChar(100)
+  category        String         @db.VarChar(100)
+  startDate       DateTime       @map("start_date") @db.Date
+  endDate         DateTime       @map("end_date") @db.Date
+  progress        Int            @default(0)
+  status          String         @default("ongoing") @db.VarChar(20)
+  hoursLearned    Int            @default(0) @map("hours")
+  certificateUrl  String?        @map("certificate_url") @db.Text
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamp
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  certificates    Certificate[]
+
+  @@map("courses")
+  @@index([userId])
+}
+
+model Certificate {
+  id          Int      @id @default(autoincrement())
+  courseId    Int      @map("course_id")
+  fileUrl     String   @map("file_url") @db.Text
+  uploadedAt  DateTime @default(now()) @map("uploaded_at") @db.Timestamp
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+  @@index([courseId])
+}
