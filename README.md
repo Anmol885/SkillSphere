@@ -96,7 +96,7 @@ npm install
 
 # Configure environment variables
 # Edit .env file with your database credentials
-DATABASE_URL="postgresql://postgres:password@localhost:5432/skillsphere?schema=public"
+DATABASE_URL=""
 JWT_SECRET="your-secret-key"
 PORT=5000
 CORS_ORIGIN="http://localhost:3000"
