@@ -5,7 +5,7 @@ pipeline {
         // Docker Hub credentials (configure in Jenkins)
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
-        DOCKER_USERNAME = credentials('dockerhub-username')
+        DOCKER_USERNAME = 'anmol4944'
 
         // Application configuration
         APP_NAME = 'skillsphere'
@@ -278,13 +278,12 @@ pipeline {
         }
 
         always {
-            echo '🧹 Cleaning up...'
+            script {
+                echo '🧹 Cleaning up...'
 
-            // Clean workspace
-            cleanWs()
-
-            // Remove dangling images
-            sh 'docker image prune -f || true'
+                // Remove dangling images
+                sh 'docker image prune -f || true'
+            }
         }
     }
 }
