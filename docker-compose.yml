@@ -78,7 +78,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Prometheus for Metrics Collection
+  # Prometheus for Metrics Collections
   prometheus:
     image: prom/prometheus:latest
     container_name: skillsphere-prometheus
