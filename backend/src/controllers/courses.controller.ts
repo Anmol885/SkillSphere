@@ -36,7 +36,7 @@ export const getCourseById = async (
     const userId = req.user!.userId;
 
     const course = await prisma.course.findFirst({
-      where: { id, userId },
+      where: { id: parseInt(id), userId },
       include: {
         certificates: true,
       },
@@ -106,7 +106,7 @@ export const updateCourse = async (
 
     // Check if course exists and belongs to user
     const existingCourse = await prisma.course.findFirst({
-      where: { id, userId },
+      where: { id: parseInt(id), userId },
     });
 
     if (!existingCourse) {
@@ -124,7 +124,7 @@ export const updateCourse = async (
     if (validated.hoursLearned !== undefined) updateData.hoursLearned = validated.hoursLearned;
 
     const course = await prisma.course.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data: updateData,
       include: {
         certificates: true,
@@ -158,7 +158,7 @@ export const deleteCourse = async (
 
     // Check if course exists and belongs to user
     const existingCourse = await prisma.course.findFirst({
-      where: { id, userId },
+      where: { id: parseInt(id), userId },
     });
 
     if (!existingCourse) {
@@ -166,7 +166,7 @@ export const deleteCourse = async (
     }
 
     await prisma.course.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     res.json({ message: 'Course deleted successfully' });
@@ -185,7 +185,7 @@ export const markCourseCompleted = async (
     const userId = req.user!.userId;
 
     const course = await prisma.course.findFirst({
-      where: { id, userId },
+      where: { id: parseInt(id), userId },
     });
 
     if (!course) {
@@ -193,7 +193,7 @@ export const markCourseCompleted = async (
     }
 
     const updatedCourse = await prisma.course.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data: {
         status: 'completed',
         progress: 100,

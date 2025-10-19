@@ -12,8 +12,8 @@ export const getDashboardStats = async (
 
     const [totalCourses, completedCourses, activeCourses, certificates] = await Promise.all([
       prisma.course.count({ where: { userId } }),
-      prisma.course.count({ where: { userId, status: 'COMPLETED' } }),
-      prisma.course.count({ where: { userId, status: 'IN_PROGRESS' } }),
+      prisma.course.count({ where: { userId, status: 'completed' } }),
+      prisma.course.count({ where: { userId, status: 'in-progress' } }),
       prisma.certificate.count({
         where: { course: { userId } },
       }),
@@ -66,7 +66,7 @@ export const getAnalytics = async (
         );
       });
 
-      const coursesCompleted = monthCourses.filter((c) => c.status === 'COMPLETED').length;
+      const coursesCompleted = monthCourses.filter((c) => c.status === 'completed').length;
       const hours = monthCourses.reduce((sum, course) => sum + course.hoursLearned, 0);
 
       return { month, hours, coursesCompleted };
@@ -88,9 +88,9 @@ export const getAnalytics = async (
     // Dashboard stats
     const dashboardStats = {
       totalCourses: courses.length,
-      completedCourses: courses.filter((c) => c.status === 'COMPLETED').length,
-      activeCourses: courses.filter((c) => c.status === 'IN_PROGRESS').length,
-      totalCertificates: courses.reduce((sum, c) => sum + c.certificates.length, 0),
+      completedCourses: courses.filter((c) => c.status === 'completed').length,
+      activeCourses: courses.filter((c) => c.status === 'in-progress').length,
+      totalCertificates: courses.reduce((sum, c) => sum + (c.certificates?.length || 0), 0),
       totalHoursLearned: courses.reduce((sum, c) => sum + c.hoursLearned, 0),
     };
 
